@@ -131,11 +131,26 @@ export class ItemsService<Item extends AnyItem = AnyItem> implements AbstractSer
 			let primaryKey = payloadWithTypeCasting[primaryKeyField];
 
 			try {
-				await trx.insert(payloadWithoutAliases).into(this.collection);
+				//
+                // [REFACTORED]
+                // Changed this Knex function so it immediately returns the ID of the inserted object.
+                //
+                var key = yield trx.returning(primaryKeyField).insert(payloadWithoutAliases).into(this.collection);
+                primaryKey = key[0];
+                //Check if the primary key is returned.
+                if(primaryKey == null){
+                    throw yield "No primary key has been returned.";
+                }
+                payload[primaryKeyField] = primaryKey;
 			} catch (err) {
 				throw await translateDatabaseError(err);
 			}
-
+			//
+            // [REFACTORED]
+            // This function has been changed to support UUID's from PostgreSQL.
+            // The if (!primaryKey) function for getting the last insert primary key has been replaced by the refactored Knex statement above.
+            // Postgres UUID don't support max() function and this function is unreliable for randomly generated identifiers.
+            /*
 			// When relying on a database auto-incremented ID, we'll have to fetch it from the DB in
 			// order to know what the PK is of the just-inserted item
 			if (!primaryKey) {
@@ -145,7 +160,7 @@ export class ItemsService<Item extends AnyItem = AnyItem> implements AbstractSer
 				// Set the primary key on the input item, in order for the "after" event hook to be able
 				// to read from it
 				payload[primaryKeyField] = primaryKey;
-			}
+			}*/
 
 			const { revisions: revisionsO2M } = await payloadService.processO2M(payload, primaryKey);
 
