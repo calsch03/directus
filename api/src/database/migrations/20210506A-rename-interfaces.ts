@@ -55,13 +55,18 @@ export async function up(knex: Knex): Promise<void> {
 				.from('directus_fields')
 				.where({ interface: before });
 
-			for (const { id, options: existingOptions } of fields) {
+			for (const { id, options: existingOptionsRaw } of fields) {
+				const existingOptions =
+					typeof existingOptionsRaw === 'string' ? JSON.parse(existingOptionsRaw) : existingOptionsRaw;
+
 				const newOptions = {
 					...(existingOptions || {}),
 					...options,
 				};
 
-				await knex('directus_fields').update({ interface: after, options: newOptions }).where({ id });
+				await knex('directus_fields')
+					.update({ interface: after, options: JSON.stringify(newOptions) })
+					.where({ id });
 			}
 		} else {
 			await knex('directus_fields').update({ interface: after }).where({ interface: before });
