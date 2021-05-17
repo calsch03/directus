@@ -134,11 +134,11 @@ export class ItemsService<Item extends AnyItem = AnyItem> implements AbstractSer
                 // [REFACTORED]
                 // Changed this Knex function so it immediately returns the ID of the inserted object.
                 //
-                var key = yield trx.returning(primaryKeyField).insert(payloadWithoutAliases).into(this.collection);
+                var key = await trx.returning(primaryKeyField).insert(payloadWithoutAliases).into(this.collection);
                 primaryKey = key[0];
                 //Check if the primary key is returned.
                 if(primaryKey == null){
-                    throw yield "No primary key has been returned.";
+                    throw await "No primary key has been returned.";
                 }
                 payload[primaryKeyField] = primaryKey;
 			} catch (err) {
